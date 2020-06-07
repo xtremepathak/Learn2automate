@@ -24,5 +24,7 @@ foreach($comp in $Computers)
 }
 $return = "Ping Pass systems : `n $PingPass `nPing Failed systems : `n $PingFail"
 $return
+$PingPass | out-file "c:\temp\pingpass.txt"
+$PingFail | out-file "c:\temp\pingfail.txt"
 
 }
