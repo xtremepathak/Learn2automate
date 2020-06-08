@@ -1,0 +1,41 @@
+<#.
+Author - Learn2Automate
+About - This script will Check for WinRM Access to a list of computers either user provided input or all AD computers in default domain
+Usage - call function by Check-WinRM -computers ad01,ad02,abc01  or Check-WinRM to run against all systems in AD
+.#>
+
+Function Check-WinRM{
+
+Param(
+        [String[]] $computers
+      )
+
+if($computers -eq $null)
+{
+import-module activedirectory # Not neccesary with new PS Version but a good practice 
+$computers = Get-ADComputer -Filter {enabled -eq "True"} | select -ExpandProperty Name
+}
+$result = Invoke-Command -ComputerName $computers -ScriptBlock {$env:COMPUTERNAME} -ErrorAction SilentlyContinue
+$result
+}
+
+$computers = "ad01","ad02","client01","client04"
+$statuswinrm = Check-WinRM -computers $computers
+
+<.# Use below code if you would like to use this with Check-Ping function
+$computersobj = check-ping -computers ad01,ad02,client01,client04
+$computers = $computersobj | where {$_.status -eq "online"} | select -ExpandProperty Computername
+$statuswinrm = Check-WinRM -computers $($computers | where {$_.status -eq "online"} | select -ExpandProperty Computername)
+#.>
+
+# below code is just to create a ps object as ouput
+$list  = @()
+foreach($com in $computers)
+{
+$psoutput = [PSCustomObject]@{
+ComputerName = $com
+Status = if($statuswinrm -contains $com){"WinRM Success"} else{"WinRM Issue"}
+}
+$list += $psoutput
+}
+$list | export-csv  c:\temp\winrm.csv
